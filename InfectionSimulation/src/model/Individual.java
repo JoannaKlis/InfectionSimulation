@@ -1,26 +1,72 @@
 package model;
 
 import java.util.Random;
+
+import implementation.HealthState;
 import implementation.Vector2D;
 
 public class Individual {
     private static final double MAX_SPEED = 2.5;
     private static final Random random = new Random();
 
+    // timery zakażenia w sekundach
+    private static final double INFECTION_DURATION_MIN = 20.0;
+    private static final double INFECTION_DURATION_MAX = 30.0;
+
     // Wektor pozycji (w metrach)
     private Vector2D position;
     // Wektor prędkości (w m/s)
     private Vector2D velocity;
 
-    private boolean isInfected;
+    // logika zdrowia
+    private HealthState healthState;
+    private double infectionTimer = 0.0;
+    private double requiredInfectionTime;
 
     // konstruktor inicjalizacji osobnika na losowej pozycji
-    public Individual(double x, double y, boolean isInfected) {
+    public Individual(double x, double y) {
         this.position = new Vector2D(x, y);
         this.velocity = new Vector2D(0, 0); // początkowo 0, póżniej losowa
-        this.isInfected = isInfected;
         setRandomVelocity();
+        this.healthState = HealthState.SUSCEPTIBLE_HEALTHY;
     }
+
+    // ustawienie stanu zdrowia
+    public void setHealthState(HealthState newState) {
+        this.healthState = newState;
+
+        if (isCurrentlyInfected()) {
+            this.infectionTimer = 0.0;
+            this.requiredInfectionTime = INFECTION_DURATION_MIN + random.nextDouble() * (INFECTION_DURATION_MAX - INFECTION_DURATION_MIN);
+        }
+    }
+
+    // aktualizacja timera zakażenia
+    public void updateInfectionState(double deltaTime) {
+        if (!isCurrentlyInfected()) {
+            return;
+        }
+
+        infectionTimer += deltaTime;
+
+        if (infectionTimer >= requiredInfectionTime) {
+            // zakażony osobnik zdrowieje (uzyskuje odporność)
+            System.out.println("  [ZDROWIE] Osobnik na pozycji (" + String.format("%.2f", position.getX()) +
+                    ") wyzdrowiał i uzyskał odporność.");
+            this.healthState = HealthState.IMMUNE;
+            this.infectionTimer = 0.0;
+        }
+    }
+
+    // metody pomocnicze do stanu zdrowia
+    public HealthState getHealthState() { return healthState; }
+    public boolean isImmune() { return healthState == HealthState.IMMUNE; }
+    public boolean isSusceptibleHealthy() { return healthState == HealthState.SUSCEPTIBLE_HEALTHY; }
+    public boolean isCurrentlyInfected() {
+        return healthState == HealthState.INFECTED_ASYMPTOMATIC ||
+                healthState == HealthState.INFECTED_SYMPTOMATIC;
+    }
+    public boolean isSymptomatic() { return healthState == HealthState.INFECTED_SYMPTOMATIC; }
 
     // losowa prędkość z limitem MAX_SPEED
     private void setRandomVelocity() {
@@ -88,13 +134,21 @@ public class Individual {
 
     // gettery i settery
     public Vector2D getPosition() { return position; }
-    public boolean isInfected() { return isInfected; }
-    public void setInfected(boolean infected) { this.isInfected = infected; }
 
     @Override
     public String toString() {
-        String status = isInfected ? "**ZAKAŻONY**" : "Zdrowy";
-        return String.format("Pozycja: (%.2f, %.2f)m | Prędkość: %.2f m/s | Status: %s",
+        String status;
+        if (healthState == HealthState.IMMUNE) {
+            status = "Odporny (IMN)";
+        } else if (healthState == HealthState.SUSCEPTIBLE_HEALTHY) {
+            status = "Zdrowy (SUS)";
+        } else if (healthState == HealthState.INFECTED_ASYMPTOMATIC) {
+            status = "**ZAKAŻONY** (ASY, " + String.format("%.1f/%.1f", infectionTimer, requiredInfectionTime) + "s)";
+        } else {
+            status = "**ZAKAŻONY** (SYM, " + String.format("%.1f/%.1f", infectionTimer, requiredInfectionTime) + "s)";
+        }
+
+        return String.format("Pos: (%.2f, %.2f)m | Speed: %.2f m/s | Status: %s",
                 position.getX(), position.getY(), velocity.abs(), status);
     }
 }
