@@ -11,6 +11,35 @@ public class Vector2D implements IVector {
         this.y = y;
     }
 
+    // Nowa metoda: dodawanie wektora
+    public Vector2D add(Vector2D other) {
+        this.x += other.x;
+        this.y += other.y;
+        return this; // Zwracamy obiekt, aby móc łączyć operacje (chaining)
+    }
+
+    // Nowa metoda: skalowanie wektora przez skalar
+    public Vector2D scale(double scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
+        return this;
+    }
+
+    // Nowa metoda: ustawienie nowych komponentów
+    public void setComponents(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    // Nowa metoda: tworzenie kopii (niezbędne, aby nie zmieniać referencji)
+    public Vector2D copy() {
+        return new Vector2D(this.x, this.y);
+    }
+
+    // Zabezpieczenie przed błędem z przesłanego pliku: Wektor musi być mutable do symulacji
+    public double getX() { return x; }
+    public double getY() { return y; }
+
     @Override
     public double abs() {
         return Math.sqrt(x * x + y * y);
