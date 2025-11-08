@@ -25,4 +25,9 @@ public class HealthySusceptibleState implements InfectionState {
         }
         // Ustawienie czasu trwania choroby jest teraz w konstruktorach stanów Ill...State
     }
+
+    @Override
+    public int getRemainingSteps() {
+        return 0;
+    }
 }

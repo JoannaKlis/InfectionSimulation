@@ -6,6 +6,7 @@ import implementation.Vector2D;
 import models.Area;
 import models.Person;
 import models.InfectionStatus;
+import models.PersonMemento;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,36 +17,102 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 public class SimulationPanel extends JPanel implements ActionListener {
-    private final List<Person> population;
+    private List<Person> population;
     private final Map<Person, Map<Person, Integer>> proximityTracker; // osobaA -> (osobaB -> liczba_krokow_blisko)
     private int stepCounter;
+    private final Timer timer;
+    private final List<SimulationMemento> history; // Lista pamiątek
 
     public SimulationPanel() {
         this.population = new ArrayList<>();
         this.proximityTracker = new HashMap<>();
         this.stepCounter = 0;
-        this.setPreferredSize(new Dimension(Area.calculatePixels(AreaConstants.N_WIDTH_METERS),
-                Area.calculatePixels(AreaConstants.M_HEIGHT_METERS)));
-        this.setBackground(Color.LIGHT_GRAY);
+        this.history = new ArrayList<>();
+
+        this.setLayout(new BorderLayout());
+
+        // Panel rysujący (północ)
+        JPanel drawingPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                SimulationPanel.this.paintComponent(g);
+            }
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(Area.calculatePixels(AreaConstants.N_WIDTH_METERS),
+                        Area.calculatePixels(AreaConstants.M_HEIGHT_METERS));
+            }
+        };
+        drawingPanel.setBackground(Color.LIGHT_GRAY);
+        this.add(drawingPanel, BorderLayout.CENTER);
 
         initializePopulation();
+        setupControlPanel();
 
         // timer symulacji
-        Timer timer = new Timer(SimulationConstants.SIMULATION_DELAY_MS, this);
+        timer = new Timer(SimulationConstants.SIMULATION_DELAY_MS, this);
         timer.start();
     }
 
-    // populacja początkowa (wrażliwa na zakażenie: zdrowa)
+    private void setupControlPanel() {
+        JPanel controlPanel = new JPanel();
+
+        JButton saveButton = new JButton("Zapisz Stan");
+        saveButton.addActionListener(e -> saveState());
+
+        JButton loadButton = new JButton("Wczytaj Stan");
+        loadButton.addActionListener(e -> loadState());
+
+        controlPanel.add(saveButton);
+        controlPanel.add(loadButton);
+
+        this.add(controlPanel, BorderLayout.SOUTH);
+    }
+
+    // ************************************************************
+    // *** WZORZEC PAMIĄTKA (MEMENTO) - Originator/Caretaker ***
+    // ************************************************************
+
+    public void saveState() {
+        List<PersonMemento> personMementos = population.stream()
+                .map(Person::saveState)
+                .collect(Collectors.toList());
+
+        SimulationMemento memento = new SimulationMemento(stepCounter, personMementos);
+        history.add(memento);
+        System.out.println("Zapisano stan symulacji w kroku: " + stepCounter);
+    }
+
+    public void loadState() {
+        if (history.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Brak zapisanych stanów do wczytania.", "Błąd Wczytywania", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        SimulationMemento memento = history.remove(history.size() - 1); // Wczytanie ostatniego
+
+        // Odtworzenie stanu kroków i populacji
+        this.stepCounter = memento.getStepCounter();
+        this.population = memento.getPopulationMementos().stream()
+                .map(Person::new) // Użycie konstruktora Person(PersonMemento)
+                .collect(Collectors.toList());
+
+        // Wyczyść proximityTracker, ponieważ jego odtworzenie wymaga dopasowania obiektów, co jest skomplikowane i może powodować błędy. Zaczynamy śledzenie od nowa.
+        proximityTracker.clear();
+
+        System.out.println("Wczytano stan symulacji z kroku: " + stepCounter);
+        repaint();
+    }
+
+
+    // populacja początkowa (zgodnie z wybraną wersją)
     private void initializePopulation() {
         for (int i = 0; i < SimulationConstants.INITIAL_POPULATION_SIZE; i++) {
             population.add(Person.createInitialPerson());
         }
-
-        Person initialPatient = Person.createInitialPerson();
-        initialPatient.infect();
-        population.add(initialPatient);
     }
 
     // dodawanie nowych osobnika co sekundę
@@ -58,7 +125,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         updateSimulation();
-        repaint(); // wywołanie paintComponent
+        repaint();
     }
 
     // logika jednego kroku symulacji
@@ -71,16 +138,22 @@ public class SimulationPanel extends JPanel implements ActionListener {
             person.update();
         }
 
-        // logika Zakażeń
+        int initialSize = population.size();
+        population.removeIf(Person::shouldBeRemoved);
+        int removedCount = initialSize - population.size();
+
+        if (removedCount > 0) {
+            // Czyścimy tracker, jeśli ktoś opuścił obszar
+            proximityTracker.clear();
+        }
         checkInfections();
     }
 
-    // implementacja logiki zakażeń
+    // implementacja logiki zakażeń (Bez zmian w logice)
     private void checkInfections() {
         int minStepsToInfection = SimulationConstants.MIN_INFECTION_STEPS;
         double infectionDistSq = SimulationConstants.INFECTION_DISTANCE_M * SimulationConstants.INFECTION_DISTANCE_M;
 
-        // resetowanie/aktualizowanie trackera dla bieżącego kroku
         Map<Person, Map<Person, Integer>> newProximityTracker = new HashMap<>();
 
         for (int i = 0; i < population.size(); i++) {
@@ -92,21 +165,17 @@ public class SimulationPanel extends JPanel implements ActionListener {
                 Vector2D posA = personA.getPosition();
                 Vector2D posB = personB.getPosition();
 
-                // obliczenie odległości (kwadrat odległości)
                 double dx = posA.getComponents()[0] - posB.getComponents()[0];
                 double dy = posA.getComponents()[1] - posB.getComponents()[1];
                 double distanceSq = dx * dx + dy * dy;
 
                 if (distanceSq < infectionDistSq) {
-                    // osobniki są blisko (mniej niż 2m)
                     int stepsAtoB = proximityTracker.getOrDefault(personA, new HashMap<>()).getOrDefault(personB, 0);
                     stepsAtoB++;
 
-                    // zapisanie nowego licznika kroków (symetrycznie dla A->B i B->A)
                     newProximityTracker.computeIfAbsent(personA, _ -> new HashMap<>()).put(personB, stepsAtoB);
                     newProximityTracker.computeIfAbsent(personB, _ -> new HashMap<>()).put(personA, stepsAtoB);
 
-                    // sprawdzenie, czy czas bliskości jest wystarczający
                     if (stepsAtoB >= minStepsToInfection) {
                         attemptInfection(personA, personB);
                     }
@@ -114,12 +183,11 @@ public class SimulationPanel extends JPanel implements ActionListener {
             }
         }
 
-        // zastąpienie starego trackera nowym
         proximityTracker.clear();
         proximityTracker.putAll(newProximityTracker);
     }
 
-    // zarażanie zdorwych i wrażliwych osobników
+    // zarażanie zdorwych i wrażliwych osobników (uwzględnia brak zakażenia, jeśli osoba jest IMMUNE)
     private void attemptInfection(Person p1, Person p2) {
         Person illPerson;
         Person susceptiblePerson;
@@ -132,15 +200,13 @@ public class SimulationPanel extends JPanel implements ActionListener {
             illPerson = p2;
             susceptiblePerson = p1;
         } else {
-            return; // brak interakcji zakaźny/podatny
+            return; // brak interakcji zakaźny/podatny lub osoba odporna
         }
 
         double chance;
         if (illPerson.hasSymptoms()) {
-            // chory z objawami: 100% szans
             chance = SimulationConstants.SYMPTOMATIC_TRANSMISSION_PROBABILITY;
         } else {
-            // chory bez objawów: 50% szans
             chance = SimulationConstants.ASYMPTOMATIC_TRANSMISSION_PROBABILITY;
         }
 
@@ -152,12 +218,17 @@ public class SimulationPanel extends JPanel implements ActionListener {
     // wizualizacja symulacji
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        // Musimy być pewni, że rysujemy na panelu do rysowania, a nie na całym SimulationPanel (BorderLayout)
+        if (getParent().getLayout() instanceof BorderLayout) {
+            // Właściwe rysowanie odbywa się na drawingPanel, który jest komponentem CENTER
+            super.paintComponent(g);
+        } else {
+            super.paintComponent(g); // W przypadku braku BorderLayout
+        }
 
-        // rysowanie osobników
         Graphics2D g2d = (Graphics2D) g;
 
-        // wymiary okna w pikselach
+        // Wymiary obszaru rysowania
         int panelWidth = getWidth();
         int panelHeight = getHeight();
 
@@ -168,18 +239,14 @@ public class SimulationPanel extends JPanel implements ActionListener {
             int xPixel = (int) (pos.getComponents()[0] * panelWidth / AreaConstants.N_WIDTH_METERS);
             int yPixel = (int) (pos.getComponents()[1] * panelHeight / AreaConstants.M_HEIGHT_METERS);
 
-            // stała wielkość kropki (lub zależna od promienia)
             int diameter = 8;
             int radius = diameter / 2;
 
-            // ustawienie koloru
             g2d.setColor(person.getStatus().getColor());
 
-            // rysowanie koła
             g2d.fillOval(xPixel - radius, yPixel - radius, diameter, diameter);
         }
 
-        // rysowanie informacji o stanie symulacji
         drawStatus(g2d);
     }
 
@@ -192,6 +259,8 @@ public class SimulationPanel extends JPanel implements ActionListener {
         g2d.setFont(new Font("Arial", Font.BOLD, 14));
 
         int yOffset = 20;
+        g2d.drawString(String.format("Wersja: %d", SimulationConstants.SIMULATION_VERSION), 10, yOffset);
+        yOffset += 20;
         g2d.drawString(String.format("Krok: %d (%.2f s)", stepCounter, (double)stepCounter / SimulationConstants.STEPS_PER_SECOND), 10, yOffset);
         yOffset += 20;
         g2d.drawString("Populacja: " + population.size(), 10, yOffset);

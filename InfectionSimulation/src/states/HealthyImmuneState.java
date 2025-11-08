@@ -13,11 +13,16 @@ public class HealthyImmuneState implements InfectionState {
 
     @Override
     public void update(Person person) {
-        // Osoba odporna nie zmienia stanu samoczynnie (można by dodać utratę odporności)
+        // Osoba odporna nie zmienia stanu samoczynnie
     }
 
     @Override
     public void infect(Person person, boolean hasSymptoms) {
         // Już odporny, nie można zakazić
+    }
+
+    @Override
+    public int getRemainingSteps() {
+        return 0;
     }
 }

@@ -7,4 +7,7 @@ public interface InfectionState {
     InfectionStatus getStatus(); // zwraca stałą statusu osobnika
     void update(Person person); // aktualizacja stanu osobnika
     void infect(Person person, boolean hasSymptoms); // zakażenie osobnika
+
+    // Dodano do wzorca Pamiątka: zwraca pozostałą liczbę kroków choroby (lub 0)
+    int getRemainingSteps();
 }
