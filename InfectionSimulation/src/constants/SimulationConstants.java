@@ -9,8 +9,8 @@ public class SimulationConstants {
 
     // STAŁE POPULACJI
     public static final double MAX_SPEED_M_PER_S = 2.5;  // max. prędkość poruszania się osobników (m/s)
-    public static final int INITIAL_POPULATION_SIZE = 50;
-    public static final double PERSON_RADIUS_M = 0.1; // promień osobników (dla wizualizacji i kolizji)
+    public static final int INITIAL_POPULATION_SIZE = 1000; // liczba początkowej populacji
+    public static final int NEW_PERSON_ENTRY_INTERVAL_S = 5; // nowy osobnik co 5 sekund
 
     // LOGIKA ZAKAŻEŃ
     public static final double NEW_PERSON_INFECTION_PROBABILITY = 0.10; // 10% na bycie zakażonym

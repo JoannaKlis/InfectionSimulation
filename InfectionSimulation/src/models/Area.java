@@ -1,24 +1,22 @@
 package models;
 
 import javax.swing.*;
-import java.awt.*;
 
 public class Area extends JFrame {
-    private int calculatePixels(double meters) {
-        // 1 cal = 0.0254 metra
-        double inches = meters / 0.0254;
+    public static int calculatePixels(double meters) {
+        // skalowanie: 1 metr = 8 pikseli (dla widoczności obszaru 100x100m)
+        final double PIXELS_PER_METER = 8.0;
 
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        double screenDPI = toolkit.getScreenResolution();
-
-        return (int) Math.round(inches * screenDPI);
+        return (int) Math.round(meters * PIXELS_PER_METER);
     }
 
-    public Area(double widthMeters, double heightMeters) {
+    public Area(double widthMeters, double heightMeters, String title) {
         int widthPixels = calculatePixels(widthMeters);
         int heightPixels = calculatePixels(heightMeters);
 
-        this.setSize(widthPixels, heightPixels);
+        // dodanie miejsca na ramkę
+        this.setSize(widthPixels + 10, heightPixels + 50);
+        this.setTitle(title);
 
         // konfiguracja okna
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
