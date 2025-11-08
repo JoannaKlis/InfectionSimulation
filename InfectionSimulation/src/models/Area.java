@@ -1,6 +1,4 @@
-package model;
-
-import constants.AreaConstants;
+package models;
 
 import javax.swing.*;
 import java.awt.*;

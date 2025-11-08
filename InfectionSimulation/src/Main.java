@@ -1,7 +1,7 @@
 import javax.swing.SwingUtilities;
 
 import constants.AreaConstants;
-import model.Area;
+import models.Area;
 
 public class Main {
 
