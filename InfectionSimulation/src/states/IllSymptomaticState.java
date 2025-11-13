@@ -8,17 +8,16 @@ import models.Person;
 public class IllSymptomaticState implements InfectionState {
     private int illnessDurationSteps;
 
-    // Konstruktor standardowy (przy pierwszym zakażeniu)
+    // konstruktor przy pierwszym zakażeniu
     public IllSymptomaticState() {
         this.illnessDurationSteps = SimulationConstants.getRandomIllnessDurationSteps();
     }
 
-    // Konstruktor dla Memento (odtworzenie stanu)
+    // konstruktor do odtworzenie stanu
     public IllSymptomaticState(int remainingSteps) {
         if (remainingSteps > 0) {
             this.illnessDurationSteps = remainingSteps;
         } else {
-            // Jeśli Memento nie ma danych lub są nieprawidłowe, ustawiamy losowo (bezpieczeństwo)
             this.illnessDurationSteps = SimulationConstants.getRandomIllnessDurationSteps();
         }
     }
@@ -33,14 +32,14 @@ public class IllSymptomaticState implements InfectionState {
         illnessDurationSteps--;
 
         if (illnessDurationSteps <= 0) {
-            // Zmiana na stan odporności po wyzdrowieniu
+            // zmiana na stan odporności po wyzdrowieniu
             person.setState(new HealthyImmuneState());
         }
     }
 
     @Override
     public void infect(Person person, boolean hasSymptoms) {
-        // Już chory, nie można zakazić ponownie
+        // już chory
     }
 
     @Override

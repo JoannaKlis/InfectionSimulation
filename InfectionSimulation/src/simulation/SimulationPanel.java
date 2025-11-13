@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 
 public class SimulationPanel extends JPanel implements ActionListener {
     private List<Person> population;
-    private final Map<Person, Map<Person, Integer>> proximityTracker; // osobaA -> (osobaB -> liczba_krokow_blisko)
+    private final Map<Person, Map<Person, Integer>> proximityTracker;
     private int stepCounter;
     private final Timer timer;
-    private final List<SimulationMemento> history; // Lista pamiątek
+    private final List<SimulationMemento> history;
 
     public SimulationPanel() {
         this.population = new ArrayList<>();
@@ -34,7 +34,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
 
         this.setLayout(new BorderLayout());
 
-        // Panel rysujący (północ)
+        // panel rysujący
         JPanel drawingPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -72,10 +72,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
         this.add(controlPanel, BorderLayout.SOUTH);
     }
 
-    // ************************************************************
-    // *** WZORZEC PAMIĄTKA (MEMENTO) - Originator/Caretaker ***
-    // ************************************************************
-
+    // zapisywanie stanu symulacji za pomocą pamiatki
     public void saveState() {
         List<PersonMemento> personMementos = population.stream()
                 .map(Person::saveState)
@@ -86,29 +83,29 @@ public class SimulationPanel extends JPanel implements ActionListener {
         System.out.println("Zapisano stan symulacji w kroku: " + stepCounter);
     }
 
+    // załadowanie zapisanego stanu
     public void loadState() {
         if (history.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Brak zapisanych stanów do wczytania.", "Błąd Wczytywania", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        SimulationMemento memento = history.remove(history.size() - 1); // Wczytanie ostatniego
+        SimulationMemento memento = history.remove(history.size() - 1); // wczytanie ostatniego stanu
 
-        // Odtworzenie stanu kroków i populacji
+        // dtworzenie stanu kroków i populacji
         this.stepCounter = memento.getStepCounter();
         this.population = memento.getPopulationMementos().stream()
                 .map(Person::new) // Użycie konstruktora Person(PersonMemento)
                 .collect(Collectors.toList());
 
-        // Wyczyść proximityTracker, ponieważ jego odtworzenie wymaga dopasowania obiektów, co jest skomplikowane i może powodować błędy. Zaczynamy śledzenie od nowa.
-        proximityTracker.clear();
+        proximityTracker.clear(); // wyczyszczenie proximityTracker
 
         System.out.println("Wczytano stan symulacji z kroku: " + stepCounter);
         repaint();
     }
 
 
-    // populacja początkowa (zgodnie z wybraną wersją)
+    // populacja początkowa
     private void initializePopulation() {
         for (int i = 0; i < SimulationConstants.INITIAL_POPULATION_SIZE; i++) {
             population.add(Person.createInitialPerson());
@@ -143,13 +140,12 @@ public class SimulationPanel extends JPanel implements ActionListener {
         int removedCount = initialSize - population.size();
 
         if (removedCount > 0) {
-            // Czyścimy tracker, jeśli ktoś opuścił obszar
-            proximityTracker.clear();
+            proximityTracker.clear(); // czyszczenie trackera
         }
         checkInfections();
     }
 
-    // implementacja logiki zakażeń (Bez zmian w logice)
+    // implementacja logiki zakażeń
     private void checkInfections() {
         int minStepsToInfection = SimulationConstants.MIN_INFECTION_STEPS;
         double infectionDistSq = SimulationConstants.INFECTION_DISTANCE_M * SimulationConstants.INFECTION_DISTANCE_M;
@@ -187,7 +183,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
         proximityTracker.putAll(newProximityTracker);
     }
 
-    // zarażanie zdorwych i wrażliwych osobników (uwzględnia brak zakażenia, jeśli osoba jest IMMUNE)
+    // zarażanie zdorwych i wrażliwych osobników
     private void attemptInfection(Person p1, Person p2) {
         Person illPerson;
         Person susceptiblePerson;
@@ -218,17 +214,15 @@ public class SimulationPanel extends JPanel implements ActionListener {
     // wizualizacja symulacji
     @Override
     protected void paintComponent(Graphics g) {
-        // Musimy być pewni, że rysujemy na panelu do rysowania, a nie na całym SimulationPanel (BorderLayout)
         if (getParent().getLayout() instanceof BorderLayout) {
-            // Właściwe rysowanie odbywa się na drawingPanel, który jest komponentem CENTER
             super.paintComponent(g);
         } else {
-            super.paintComponent(g); // W przypadku braku BorderLayout
+            super.paintComponent(g);
         }
 
         Graphics2D g2d = (Graphics2D) g;
 
-        // Wymiary obszaru rysowania
+        // wymiary obszaru
         int panelWidth = getWidth();
         int panelHeight = getHeight();
 

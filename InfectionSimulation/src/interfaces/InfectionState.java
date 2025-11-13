@@ -8,6 +8,6 @@ public interface InfectionState {
     void update(Person person); // aktualizacja stanu osobnika
     void infect(Person person, boolean hasSymptoms); // zakażenie osobnika
 
-    // Dodano do wzorca Pamiątka: zwraca pozostałą liczbę kroków choroby (lub 0)
+    // zwraca pozostałą liczbę kroków choroby (lub 0) (używane do PAMIĄTKI)
     int getRemainingSteps();
 }

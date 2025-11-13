@@ -15,36 +15,34 @@ public class Person {
     private InfectionState currentState;
     private boolean shouldBeRemoved = false;
 
-    // KONSTRUKTOR DLA POPULACJI POCZĄTKOWEJ I NOWYCH OSÓB
+    // konstruktor dla i populacji początkowej i nowych wkraczających osobników
     public Person(Vector2D initialPosition, InfectionStatus initialStatus) {
         this.position = initialPosition;
         this.velocity = new Vector2D(0, 0);
 
-        // Ustawienie stanu początkowego na podstawie podanego InfectionStatus
-        // Czas trwania choroby jest 0, bo i tak tylko stany ILL go używają
+        // stan początkowy na podstawie podanego InfectionStatus
         this.currentState = stateFromStatus(initialStatus, 0);
 
         setRandomVelocity();
     }
 
-    // KONSTRUKTOR DLA WZORCA PAMIĄTKA (MEMENTO) - odtworzenie stanu
+    // konstruktor dla wzorca pamiątka do odtworzenia stanu
     public Person(PersonMemento memento) {
         this.position = memento.position;
         this.velocity = memento.velocity;
         this.shouldBeRemoved = memento.shouldBeRemoved;
-        // Używamy stanu i pozostałych kroków z memento
         this.currentState = stateFromStatus(memento.status, memento.illnessDurationSteps);
 
-        setRandomVelocity(); // Ponowne nadanie prędkości jest bezpieczniejsze
+        setRandomVelocity();
     }
 
-    // Metoda pomocnicza do tworzenia stanu z InfectionStatus (dla konstruktora i memento)
+    // metoda pomocnicza do tworzenia stanu z InfectionStatus (dla konstruktora i pamiątki-memento)
     private static InfectionState stateFromStatus(InfectionStatus status, int illnessDurationSteps) {
         switch (status) {
             case HEALTHY_IMMUNE:
                 return new HealthyImmuneState();
             case SUSCEPTIBLE_ILL_ASYMPTOMATIC:
-                // Użycie konstruktora stanów ILL z czasem trwania (dla Memento)
+                // użycie konstruktora stanów ILL z czasem trwania (dla pamiątki)
                 return new states.IllAsymptomaticState(illnessDurationSteps);
             case SUSCEPTIBLE_ILL_SYMPTOMATIC:
                 return new states.IllSymptomaticState(illnessDurationSteps);
@@ -54,18 +52,18 @@ public class Person {
         }
     }
 
-    // Dodanie settera dla stanu, używanego przez obiekty stanu
+    // setter dla stanu, używanego przez obiekty stanu
     public void setState(InfectionState newState) {
         this.currentState = newState;
     }
 
-    // Wzorzec Pamiątka (Memento) - Tworzenie Memento
+    // tworzenie pamiątki
     public PersonMemento saveState() {
         return new PersonMemento(this.position, this.velocity, this.currentState.getStatus(),
                 this.currentState.getRemainingSteps(), this.shouldBeRemoved);
     }
 
-    // tworzenie nowego osobnika na wejściu (MODYFIKACJA DLA WERSJI 1/2)
+    // tworzenie nowego osobnika na wejściu
     public static Person createNewEntryPerson() {
         double x;
         double y;
@@ -87,18 +85,18 @@ public class Person {
 
         Vector2D position = new Vector2D(x, y);
 
-        // Wersja 2: Możliwość bycia odpornym (zielony)
+        // dla wersji 2: możliwość bycia odpornym (zielony)
         if (SimulationConstants.SIMULATION_VERSION == 2) {
             if (ThreadLocalRandom.current().nextDouble() < SimulationConstants.NEW_PERSON_IMMUNE_PROBABILITY) {
                 return new Person(position, InfectionStatus.HEALTHY_IMMUNE);
             }
         }
 
-        // Dalsza logika dotyczy zawsze wrażliwych (żółtych)
+        // wrażliwi na zakażenie
         Person newPerson = new Person(position, InfectionStatus.SUSCEPTIBLE_HEALTHY);
 
         if (ThreadLocalRandom.current().nextDouble() < SimulationConstants.NEW_PERSON_INFECTION_PROBABILITY) {
-            // 10% szans na bycie chorym - wywołanie metody zakażającej
+            // 10% szans na bycie chorym (wywołanie metody zakażającej)
             boolean hasSymptoms = ThreadLocalRandom.current().nextBoolean();
             newPerson.infect(hasSymptoms);
         }
@@ -106,17 +104,17 @@ public class Person {
         return newPerson;
     }
 
-    // osobnik dla populacji początkowej (MODYFIKACJA DLA WERSJI 1/2)
+    // osobnik dla populacji początkowej
     public static Person createInitialPerson() {
         double randX = ThreadLocalRandom.current().nextDouble(AreaConstants.N_WIDTH_METERS);
         double randY = ThreadLocalRandom.current().nextDouble(AreaConstants.M_HEIGHT_METERS);
         Vector2D position = new Vector2D(randX, randY);
 
-        // Wersja 1: Zawsze wrażliwy (żółty)
+        // wersja 1: zawsze wrażliwy (żółty)
         if (SimulationConstants.SIMULATION_VERSION == 1) {
             return new Person(position, InfectionStatus.SUSCEPTIBLE_HEALTHY);
         }
-        // Wersja 2: Część może być odporna (zielony)
+        // wersja 2: Cczęść może być odporna (zielony)
         else {
             if (ThreadLocalRandom.current().nextDouble() < SimulationConstants.INITIAL_IMMUNE_PROBABILITY) {
                 return new Person(position, InfectionStatus.HEALTHY_IMMUNE);
@@ -126,10 +124,10 @@ public class Person {
         }
     }
 
-    // aktualizacja stanu osobnika w jednym kroku (delegacja do stanu)
+    // aktualizacja stanu osobnika w jednym kroku
     public void update() {
         if (shouldBeRemoved) {
-            return; // Nie aktualizujemy usuniętych osobników
+            return; // nie aktualizujemy usuniętych osobników
         }
 
         move();
@@ -141,9 +139,9 @@ public class Person {
         }
     }
 
-    // ... (metoda move() bez zmian)
+    // poruszanie się osobników
     private void move() {
-        // Obliczenie przesunięcia na dany krok
+        // obliczenie przesunięcia na dany krok
         double stepTime = 1.0 / SimulationConstants.STEPS_PER_SECOND;
         double dx = velocity.getComponents()[0] * stepTime;
         double dy = velocity.getComponents()[1] * stepTime;
@@ -153,29 +151,29 @@ public class Person {
 
         boolean hitBoundary = false;
 
-        // Sprawdzenie, czy osobnik wyszedł poza granicę X
+        // sprawdzenie, czy osobnik wyszedł poza granicę X
         if (newX < 0 || newX > AreaConstants.N_WIDTH_METERS) {
             hitBoundary = true;
         }
-        // Sprawdzenie, czy osobnik wyszedł poza granicę Y
+        // sprawdzenie, czy osobnik wyszedł poza granicę Y
         if (newY < 0 || newY > AreaConstants.M_HEIGHT_METERS) {
             hitBoundary = true;
         }
 
         if (hitBoundary) {
-            // Logika wychodzenia/odbijania od granicy (50% szans)
+            // logika wychodzenia/odbijania od granicy (50% szans)
             if (ThreadLocalRandom.current().nextDouble() < 0.5) {
-                // 50% szans: Osobnik opuszcza obszar (usuwamy go)
+                // 50% szans: osobnik opuszcza obszar -> jest usuwany
                 this.shouldBeRemoved = true;
                 return;
             } else {
-                // 50% szans: Odbicie i powrót do obszaru
+                // 50% szans: odbicie i powrót do obszaru
 
-                // Korygowanie pozycji do granicy (aby nie "utknął" poza granicą)
+                // korygowanie pozycji do granicy (aby osobnik nie utknął poza granicą)
                 newX = Math.max(0, Math.min(AreaConstants.N_WIDTH_METERS, newX));
                 newY = Math.max(0, Math.min(AreaConstants.M_HEIGHT_METERS, newY));
 
-                // Odwrócenie składowej prędkości
+                // odwrócenie składowej prędkości
                 if (position.getComponents()[0] <= 0 || position.getComponents()[0] >= AreaConstants.N_WIDTH_METERS) {
                     velocity = new Vector2D(-velocity.getComponents()[0], velocity.getComponents()[1]);
                 }
@@ -183,14 +181,14 @@ public class Person {
                     velocity = new Vector2D(velocity.getComponents()[0], -velocity.getComponents()[1]);
                 }
 
-                setRandomVelocity(); // Losowa zmiana kierunku po odbiciu
+                setRandomVelocity(); // losowa zmiana kierunku po odbiciu
             }
         }
 
         position = new Vector2D(newX, newY);
     }
 
-    // ... (metoda setRandomVelocity() bez zmian)
+    // losowa prędkość
     private void setRandomVelocity() {
         double maxSpeed = SimulationConstants.MAX_SPEED_M_PER_S;
         double speed = ThreadLocalRandom.current().nextDouble(maxSpeed * 0.5, maxSpeed);
@@ -201,20 +199,18 @@ public class Person {
         this.velocity = new Vector2D(vx, vy);
     }
 
-    // Modyfikacja metody infect, aby używała stanu
+    // czy osobnik ma objawy (logika zakażeń)
     public void infect(boolean hasSymptoms) {
-        // Delegacja logiki zakażenia do obiektu stanu
         currentState.infect(this, hasSymptoms);
     }
 
-    // Modyfikacja metody infect, aby utrzymać kompatybilność z SimulationPanel.java
+    // losowe przypisane objawów dla nowo zakażonego osobnika
     public void infect() {
-        // Losowe przypisanie objawów dla nowo zakażonego (jak w oryginalnej logice)
         boolean hasSymptoms = ThreadLocalRandom.current().nextBoolean();
         currentState.infect(this, hasSymptoms);
     }
 
-    // Zmiana implementacji metod sprawdzających status (delegacja)
+    // zmiana status na wrażliwy i zdrowy
     public boolean isSusceptible() {
         return currentState.getStatus() == InfectionStatus.SUSCEPTIBLE_HEALTHY;
     }
@@ -222,10 +218,6 @@ public class Person {
     public boolean isIll() {
         return currentState.getStatus() == InfectionStatus.SUSCEPTIBLE_ILL_ASYMPTOMATIC ||
                 currentState.getStatus() == InfectionStatus.SUSCEPTIBLE_ILL_SYMPTOMATIC;
-    }
-
-    public boolean isImmune() {
-        return currentState.getStatus() == InfectionStatus.HEALTHY_IMMUNE;
     }
 
     public boolean hasSymptoms() {
@@ -237,11 +229,6 @@ public class Person {
         return position;
     }
 
-    public Vector2D getVelocity() {
-        return velocity;
-    }
-
-    // Getry statusu zwracają teraz status z obiektu stanu
     public InfectionStatus getStatus() {
         return currentState.getStatus();
     }

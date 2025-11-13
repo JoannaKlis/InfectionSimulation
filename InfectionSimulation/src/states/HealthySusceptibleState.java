@@ -13,7 +13,7 @@ public class HealthySusceptibleState implements InfectionState {
 
     @Override
     public void update(Person person) {
-        // Osoba wrażliwa, zdrowa nie zmienia stanu samoczynnie
+        // osobnik wrażliwy, zdrowa nie zmienia stanu samoczynnie
     }
 
     @Override
@@ -23,7 +23,6 @@ public class HealthySusceptibleState implements InfectionState {
         } else {
             person.setState(new IllAsymptomaticState());
         }
-        // Ustawienie czasu trwania choroby jest teraz w konstruktorach stanów Ill...State
     }
 
     @Override

@@ -4,7 +4,7 @@ import javax.swing.*;
 
 public class Area extends JFrame {
     public static int calculatePixels(double meters) {
-        // skalowanie: 1 metr = 8 pikseli (dla widoczności obszaru 100x100m)
+        // skalowanie: 1 metr = 8 pikseli
         final double PIXELS_PER_METER = 8.0;
 
         return (int) Math.round(meters * PIXELS_PER_METER);

@@ -3,7 +3,7 @@ package simulation;
 import models.PersonMemento;
 import java.util.List;
 
-// Klasa Pamiątka (Memento) dla całej symulacji
+// pamiątka dla całej symulacji
 public class SimulationMemento {
     private final int stepCounter;
     private final List<PersonMemento> populationMementos;
