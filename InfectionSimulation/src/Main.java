@@ -38,7 +38,7 @@ public class Main {
 
             // URUCHOMIENIE SYMULACJI
             Area frame = new Area(AreaConstants.N_WIDTH_METERS, AreaConstants.M_HEIGHT_METERS,
-                    "Symulacja Zakażeń SEIR (Wersja " + SimulationConstants.SIMULATION_VERSION + ")");
+                    "Symulacja Zakażeń (Wersja " + SimulationConstants.SIMULATION_VERSION + ")");
 
             SimulationPanel simulationPanel = new SimulationPanel();
             frame.add(simulationPanel);
